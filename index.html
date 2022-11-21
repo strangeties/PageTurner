@@ -2,20 +2,36 @@
 <html>
 <head>
 <script src="pdf.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
 <script src="page_turner.js"></script>
+
 <link rel="stylesheet" href="page_turner.css">
 </head>
 <body>
 
-<div>
+<div class="pdf-container">
+  <div>
   <button id="prev">Previous</button>
   <button id="next">Next</button>
   <input type="file" id="myFile">
   &nbsp; &nbsp;
   <span>Page: <span id="page_num"></span> / <span id="page_count"></span></span>
+  </div>
+  <div>
+  <canvas id="pdf-canvas"></canvas>
+  </div>
 </div>
 
-<canvas id="the-canvas"></canvas>
+
+<div class="camera-container">
+  <video class="video"></video>
+  <canvas class="video-canvas" width="1280px" height="720px"></canvas>
+</div>
 
 </body>
 </html>
