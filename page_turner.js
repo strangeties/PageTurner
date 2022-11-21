@@ -1,6 +1,7 @@
 // If absolute URL from the remote server is provided, configure the CORS
 // header on that server.
-var url = 'boss_level.pdf';
+var kDefaultPdf = 'boss_level.pdf';
+var kPageOne = 1;
 
 // Loaded via <script> tag, create shortcut to access PDF.js exports.
 var pdfjsLib = window['pdfjs-dist/build/pdf'];
@@ -9,15 +10,15 @@ var pdfjsLib = window['pdfjs-dist/build/pdf'];
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf.worker.js';
 
 var pdfDoc = null,
-    pageNum = 1,
+    pageNum = kPageOne,
     pageRendering = false,
     pageNumPending = null,
     scale = 0.8,
     canvas = null,
     ctx = null;
 
-function getContext() {
-    canvas = document.getElementById('the-canvas');
+function initOnLoad() {
+    canvas = document.getElementById('pdf-canvas');
     ctx = canvas.getContext('2d');
     document.getElementById('prev').addEventListener('click', onPrevPage);
     document.getElementById('next').addEventListener('click', onNextPage);
@@ -29,19 +30,13 @@ function getContext() {
       var fileReader = new FileReader();
       fileReader.onload = function(e){
         var d = new Uint8Array(e.target.result);
-        pdfjsLib.getDocument({data: d}).promise.then(function(pdfDoc_) {
-          pdfDoc = pdfDoc_;
-          pageNum = 1;
-          document.getElementById('page_count').textContent = pdfDoc.numPages;
-          // Initial/first page rendering
-          renderPage(pageNum);
-        });
+        pdfjsLib.getDocument({data: d}).promise.then(updatePdfDoc);
       }
       fileReader.readAsArrayBuffer(file);
     });
 }
 
-window.onload = getContext
+window.onload = initOnLoad
 
 /**
  * Get page info from document, resize canvas accordingly, and render page.
@@ -112,12 +107,16 @@ function onNextPage() {
 }
 
 /**
- * Asynchronously downloads PDF.
+ * Asynchronously downloads default PDF.
  */
-pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
-  pdfDoc = pdfDoc_;
+function updatePdfDoc(newPdfDoc) {
+  pdfDoc = newPdfDoc;
   document.getElementById('page_count').textContent = pdfDoc.numPages;
 
   // Initial/first page rendering
+  pageNum = kPageOne;
   renderPage(pageNum);
-});
+}
+
+
+pdfjsLib.getDocument(kDefaultPdf).promise.then(updatePdfDoc);
