@@ -27,6 +27,52 @@ var video = null,
     videoCanvas = null,
     videoCtx = null;
 
+const leftIrisElements = getUniqueElements(FACEMESH_LEFT_IRIS);
+const rightIrisElements = getUniqueElements(FACEMESH_RIGHT_IRIS);
+
+const State = {
+  Center: 0,
+  Left: 1,
+  Right: 2
+};
+
+var state = State.Center;
+
+const centerDeg = 45;
+const triggerDeg = 3;
+
+function getUniqueElements(facemeshPoints) {
+  var points = {}
+  for (let i = 0; i < facemeshPoints.length; i++) {
+    for (let j = 0; j < facemeshPoints[i].length; j++) {
+      points[facemeshPoints[i][j]] = true;
+    }
+  }
+  uniquePoints = [];
+  for (var k in points) {
+    uniquePoints.push(k);
+  }
+  return uniquePoints;
+}
+
+function getCentroid(points, elements) {
+  var centroid = {
+    x: 0,
+    y: 0,
+    z: 0
+  };
+  for (let i = 0; i < points.length; i++) {
+    var e = elements[points[i]];
+    centroid.x = centroid.x + e.x;
+    centroid.y = centroid.x + e.y;
+    centroid.z = centroid.x + e.z;
+  }
+  centroid.x = centroid.x / points.length
+  centroid.y = centroid.y / points.length
+  centroid.z = centroid.z / points.length
+  return centroid;
+}
+
 function initOnLoad() {
     pdfCanvas = document.getElementById('pdf-canvas');
     pdfCtx = pdfCanvas.getContext('2d');
@@ -147,21 +193,37 @@ pdfjsLib.getDocument(kDefaultPdf).promise.then(updatePdfDoc);
 function onResults(results) {
   videoCtx.save();
   videoCtx.clearRect(0, 0, videoCanvas.width, videoCanvas.height);
+/*
   videoCtx.drawImage(
       results.image, 0, 0, videoCanvas.width, videoCanvas.height);
+*/
   if (results.multiFaceLandmarks) {
     for (const landmarks of results.multiFaceLandmarks) {
-      drawConnectors(videoCtx, landmarks, FACEMESH_TESSELATION,
-                     {color: '#C0C0C070', lineWidth: 1});
       drawConnectors(videoCtx, landmarks, FACEMESH_RIGHT_EYE, {color: '#FF3030'});
-      drawConnectors(videoCtx, landmarks, FACEMESH_RIGHT_EYEBROW, {color: '#FF3030'});
       drawConnectors(videoCtx, landmarks, FACEMESH_RIGHT_IRIS, {color: '#FF3030'});
       drawConnectors(videoCtx, landmarks, FACEMESH_LEFT_EYE, {color: '#30FF30'});
-      drawConnectors(videoCtx, landmarks, FACEMESH_LEFT_EYEBROW, {color: '#30FF30'});
       drawConnectors(videoCtx, landmarks, FACEMESH_LEFT_IRIS, {color: '#30FF30'});
-      drawConnectors(videoCtx, landmarks, FACEMESH_FACE_OVAL, {color: '#E0E0E0'});
-      drawConnectors(videoCtx, landmarks, FACEMESH_LIPS, {color: '#E0E0E0'});
+      var leftCentroid = getCentroid(leftIrisElements, landmarks);
+      var rightCentroid = getCentroid(rightIrisElements, landmarks);
+      var ang = Math.atan((rightCentroid.y - leftCentroid.y) / (rightCentroid.x - leftCentroid.x)) * 180 / Math.PI;
+      var diff = ang - centerDeg;
+      if (diff > triggerDeg) {
+        if (state != State.Left) {
+          state = State.Left;
+          onPrevPage();
+        }
+      } else if (diff < -triggerDeg) {
+        if (state != State.Right) {
+          state = State.Right;
+          onNextPage();         
+        }
+      } else {
+         state = State.Center;
+      }
     }
+  } else {
+    videoCtx.drawImage(
+      results.image, 0, 0, videoCanvas.width, videoCanvas.height);
   }
   videoCtx.restore();
 }
@@ -169,10 +231,12 @@ function onResults(results) {
 const faceMesh = new FaceMesh({locateFile: (file) => {
   return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
 }});
+
 faceMesh.setOptions({
   maxNumFaces: 1,
   refineLandmarks: true,
   minDetectionConfidence: 0.5,
   minTrackingConfidence: 0.5
 });
+
 faceMesh.onResults(onResults);
