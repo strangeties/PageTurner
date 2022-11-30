@@ -11,14 +11,17 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf.worker.js';
 
 /**
  *PDF variables
- */ 
+ */
+const margin = 20;
+ 
 var pdfDoc = null,
     pageNum = kPageOne,
     pageRendering = false,
     pageNumPending = null,
-    scale = 0.8,
+    scale = 1.5,
     pdfCanvas = null,
-    pdfCtx = null;
+    pdfCtx = null,
+    pdfDiv = null;
 
 /**
  *Camera variables
@@ -40,6 +43,10 @@ var state = State.Center;
 
 const centerDeg = 45;
 const triggerDeg = 3;
+
+var recordingElement;
+var recording = true;
+var camera;
 
 function getUniqueElements(facemeshPoints) {
   var points = {}
@@ -74,10 +81,17 @@ function getCentroid(points, elements) {
 }
 
 function initOnLoad() {
+    pdfDiv = document.getElementById('pdf-div');
+    pdfDiv.style.height = (window.innerHeight - margin) + "px";
+
     pdfCanvas = document.getElementById('pdf-canvas');
     pdfCtx = pdfCanvas.getContext('2d');
     document.getElementById('prev').addEventListener('click', onPrevPage);
     document.getElementById('next').addEventListener('click', onNextPage);
+    recordingElement = document.getElementById('recording')
+    recordingElement.addEventListener('click', onRecording);
+    document.getElementById('larger').addEventListener('click', larger);
+    document.getElementById('smaller').addEventListener('click', smaller);
 
     const input = document.getElementById('myFile');
     input.addEventListener('change', (e) => {
@@ -95,7 +109,7 @@ function initOnLoad() {
     videoCanvas = document.getElementsByClassName('video-canvas')[0];
     videoCtx = videoCanvas.getContext('2d');
 
-    const camera = new Camera(video, {
+    camera = new Camera(video, {
       onFrame: async () => {
         await faceMesh.send({image: video});
       },
@@ -115,9 +129,10 @@ function renderPage(num) {
   pageRendering = true;
   // Using promise to fetch the page
   pdfDoc.getPage(num).then(function(page) {
-    var viewport = page.getViewport({scale: scale});
-    pdfCanvas.height = viewport.height;
+    var viewport = page.getViewport({scale: scale, offsetY: 0});
     pdfCanvas.width = viewport.width;
+    pdfCanvas.height = viewport.height;
+    pdfDiv.style.width = (viewport.width + margin) + "px";
 
     // Render PDF page into canvas context
     var renderContext = {
@@ -154,13 +169,31 @@ function queueRenderPage(num) {
 }
 
 /**
+ * Increases/decreases scale.
+ */
+function larger() {
+  scale = scale + 0.2;
+  renderPage(pageNum);
+}
+
+function smaller() {
+  scale = scale - 0.2;
+  renderPage(pageNum);
+}
+
+/**
  * Displays previous page.
  */
 function onPrevPage() {
+  if (pdfDiv.scrollTop + pdfDiv.clientHeight >= pdfDiv.scrollHeight) {
+    pdfDiv.scrollTop = 0;
+    return;
+  }
   if (pageNum <= 1) {
     return;
   }
   pageNum--;
+  pdfDiv.scrollTop = pdfDiv.scrollHeight;
   queueRenderPage(pageNum);
 }
 
@@ -168,11 +201,31 @@ function onPrevPage() {
  * Displays next page.
  */
 function onNextPage() {
+  if (pdfDiv.scrollTop + pdfDiv.clientHeight < pdfDiv.scrollHeight) {
+    pdfDiv.scrollTop = pdfDiv.scrollHeight;
+    return;
+  }
   if (pageNum >= pdfDoc.numPages) {
     return;
   }
   pageNum++;
+  pdfDiv.scrollTop = 0;
   queueRenderPage(pageNum);
+}
+
+/**
+ * Toggles recording.
+ */
+function onRecording() {
+  if (recording) {
+    camera.stop();
+    recording = false;
+    recordingElement.innerHTML = "Paused";
+  } else {
+    camera.start();
+    recording = true;
+    recordingElement.innerHTML = "Recording";
+  }
 }
 
 /**
@@ -187,45 +240,42 @@ function updatePdfDoc(newPdfDoc) {
   renderPage(pageNum);
 }
 
-
 pdfjsLib.getDocument(kDefaultPdf).promise.then(updatePdfDoc);
 
 function onResults(results) {
-  videoCtx.save();
-  videoCtx.clearRect(0, 0, videoCanvas.width, videoCanvas.height);
-/*
-  videoCtx.drawImage(
-      results.image, 0, 0, videoCanvas.width, videoCanvas.height);
-*/
-  if (results.multiFaceLandmarks) {
-    for (const landmarks of results.multiFaceLandmarks) {
-      drawConnectors(videoCtx, landmarks, FACEMESH_RIGHT_EYE, {color: '#FF3030'});
-      drawConnectors(videoCtx, landmarks, FACEMESH_RIGHT_IRIS, {color: '#FF3030'});
-      drawConnectors(videoCtx, landmarks, FACEMESH_LEFT_EYE, {color: '#30FF30'});
-      drawConnectors(videoCtx, landmarks, FACEMESH_LEFT_IRIS, {color: '#30FF30'});
-      var leftCentroid = getCentroid(leftIrisElements, landmarks);
-      var rightCentroid = getCentroid(rightIrisElements, landmarks);
-      var ang = Math.atan((rightCentroid.y - leftCentroid.y) / (rightCentroid.x - leftCentroid.x)) * 180 / Math.PI;
-      var diff = ang - centerDeg;
-      if (diff > triggerDeg) {
-        if (state != State.Left) {
-          state = State.Left;
-          onPrevPage();
+  if (recording) {
+    videoCtx.save();
+    videoCtx.clearRect(0, 0, videoCanvas.width, videoCanvas.height);
+    if (results.multiFaceLandmarks) {
+      for (const landmarks of results.multiFaceLandmarks) {
+        drawConnectors(videoCtx, landmarks, FACEMESH_RIGHT_EYE, {color: '#FF3030'});
+        drawConnectors(videoCtx, landmarks, FACEMESH_RIGHT_IRIS, {color: '#FF3030'});
+        drawConnectors(videoCtx, landmarks, FACEMESH_LEFT_EYE, {color: '#30FF30'});
+        drawConnectors(videoCtx, landmarks, FACEMESH_LEFT_IRIS, {color: '#30FF30'});
+        var leftCentroid = getCentroid(leftIrisElements, landmarks);
+        var rightCentroid = getCentroid(rightIrisElements, landmarks);
+        var ang = Math.atan((rightCentroid.y - leftCentroid.y) / (rightCentroid.x - leftCentroid.x)) * 180 / Math.PI;
+        var diff = ang - centerDeg;
+        if (diff > triggerDeg) {
+          if (state != State.Left) {
+            state = State.Left;
+            onPrevPage();
+          }
+        } else if (diff < -triggerDeg) {
+          if (state != State.Right) {
+            state = State.Right;
+            onNextPage();         
+          }
+        } else {
+           state = State.Center;
         }
-      } else if (diff < -triggerDeg) {
-        if (state != State.Right) {
-          state = State.Right;
-          onNextPage();         
-        }
-      } else {
-         state = State.Center;
       }
+    } else {
+      videoCtx.drawImage(
+        results.image, 0, 0, videoCanvas.width, videoCanvas.height);
     }
-  } else {
-    videoCtx.drawImage(
-      results.image, 0, 0, videoCanvas.width, videoCanvas.height);
+    videoCtx.restore();
   }
-  videoCtx.restore();
 }
 
 const faceMesh = new FaceMesh({locateFile: (file) => {

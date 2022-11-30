@@ -14,24 +14,33 @@
 </head>
 <body>
 
-<div class="pdf-container">
+<table>
+<tr>
+<td>
   <div>
-  <button id="prev">Previous</button>
-  <button id="next">Next</button>
-  <input type="file" id="myFile">
-  &nbsp; &nbsp;
-  <span>Page: <span id="page_num"></span> / <span id="page_count"></span></span>
+    <button id="prev">Previous</button>
+    <button id="next">Next</button>
+    <button id="larger">+</button>
+    <button id="smaller">-</button>
+    <button id="recording">Recording</button>
+    <input type="file" id="myFile">
+    &nbsp; &nbsp;
+    <span>Page: <span id="page_num"></span> / <span id="page_count"></span></span>
   </div>
-  <div>
-  <canvas id="pdf-canvas"></canvas>
+</td>
+<td>
+  <div id="pdf-div" style="overflow-y:scroll;">
+    <canvas id="pdf-canvas"></canvas>
   </div>
-</div>
-
-
-<div class="camera-container">
-  <video class="video" hidden></video>
-  <canvas class="video-canvas" width="1280px" height="720px"></canvas>
-</div>
+</td>
+<td>
+  <div class="camera-container">
+    <video class="video" hidden></video>
+    <canvas class="video-canvas" width="1280px" height="720px"></canvas>
+  </div>
+</td>
+</tr>
+</table>
 
 </body>
 </html>
