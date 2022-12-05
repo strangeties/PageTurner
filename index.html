@@ -16,27 +16,37 @@
 
 <table>
 <tr>
-<td>
-  <div>
-    <button id="prev">Previous</button>
-    <button id="next">Next</button>
-    <button id="larger">+</button>
-    <button id="smaller">-</button>
-    <button id="recording">Recording</button>
-    <input type="file" id="myFile">
-    &nbsp; &nbsp;
-    <span>Page: <span id="page_num"></span> / <span id="page_count"></span></span>
-  </div>
+<td valign="top">
+  <table width="340px">
+    <tr>
+      <td colspan="3"><input type="file" id="myFile"></td>
+    </tr>
+    <tr>
+      <td width="100px"><a href="#" id="prev" class="round">Previous</a></td>
+      <td width="140px"><span>Page <span id="page_num"></span> / <span id="page_count"></span></span></td>
+      <td width="110px" align="right"><a href="#" id="next" class="round" align="left">Next</a></td>
+    </tr>
+    <tr>
+      <td><a href="#" id="smaller" class="round">Smaller</a></td>
+      <td><span>Scale: <span id="scale"></span>x</span></td>
+      <td align="right"><a href="#" id="larger" class="round" align="left">Larger</a></td>
+    </tr>
+    <tr>
+      <td><label class="switch"><input type="checkbox" checked id="recording"><span class="slider round"></span></label></td>
+      <td><span id="recording-status">Detecting face ...</span></td>
+      <td align="right"><b href="#" id="collapse" class="collapsible round">&#x25B2;</a></td>
+    </tr>
+    <tr><td colspan="3">
+      <div id="camera-container">
+        <video class="video" hidden></video>
+        <canvas class="video-canvas" width="320px" height="180px"></canvas>
+      </div>
+    </td></tr>
+  </table>
 </td>
 <td>
   <div id="pdf-div" style="overflow-y:scroll;">
     <canvas id="pdf-canvas"></canvas>
-  </div>
-</td>
-<td>
-  <div class="camera-container">
-    <video class="video" hidden></video>
-    <canvas class="video-canvas" width="1280px" height="720px"></canvas>
   </div>
 </td>
 </tr>

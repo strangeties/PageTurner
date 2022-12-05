@@ -21,7 +21,8 @@ var pdfDoc = null,
     scale = 1.5,
     pdfCanvas = null,
     pdfCtx = null,
-    pdfDiv = null;
+    pdfDiv = null,
+    collapsed = false;
 
 /**
  *Camera variables
@@ -86,12 +87,28 @@ function initOnLoad() {
 
     pdfCanvas = document.getElementById('pdf-canvas');
     pdfCtx = pdfCanvas.getContext('2d');
+
     document.getElementById('prev').addEventListener('click', onPrevPage);
     document.getElementById('next').addEventListener('click', onNextPage);
+
     recordingElement = document.getElementById('recording')
     recordingElement.addEventListener('click', onRecording);
+
     document.getElementById('larger').addEventListener('click', larger);
     document.getElementById('smaller').addEventListener('click', smaller);
+    document.getElementById('scale').textContent = scale;
+  
+    var coll = document.getElementById("collapse");
+    coll.addEventListener("click", function() {
+      var content = document.getElementById('camera-container');
+      if (content.style.display === "none") {
+        content.style.display = "block";
+        document.getElementById("collapse").innerHTML = "&#x25B2";
+      } else {
+        content.style.display = "none";
+        document.getElementById("collapse").innerHTML = "&#x25BC";
+      }
+    });
 
     const input = document.getElementById('myFile');
     input.addEventListener('change', (e) => {
@@ -108,6 +125,10 @@ function initOnLoad() {
     video = document.getElementsByClassName('video')[0];
     videoCanvas = document.getElementsByClassName('video-canvas')[0];
     videoCtx = videoCanvas.getContext('2d');
+    videoCtx.translate(videoCanvas.width, 0);
+    videoCtx.scale(-1, 1);
+    
+    drawX();
 
     camera = new Camera(video, {
       onFrame: async () => {
@@ -172,28 +193,32 @@ function queueRenderPage(num) {
  * Increases/decreases scale.
  */
 function larger() {
-  scale = scale + 0.2;
+  scale = scale + 0.1;
   renderPage(pageNum);
+  document.getElementById('scale').textContent = scale.toFixed(1);
 }
 
 function smaller() {
-  scale = scale - 0.2;
+  scale = scale - 0.1;
   renderPage(pageNum);
+  document.getElementById('scale').textContent = scale.toFixed(1);
 }
 
 /**
  * Displays previous page.
  */
 function onPrevPage() {
-  if (pdfDiv.scrollTop + pdfDiv.clientHeight >= pdfDiv.scrollHeight) {
-    pdfDiv.scrollTop = 0;
+  if (pdfDiv.scrollTop == 0) {
+    if (pageNum <= 1) {
+      return;
+    }
+    pageNum--;
+    pdfDiv.scrollTop = pdfDiv.scrollHeight;
+    queueRenderPage(pageNum);
     return;
   }
-  if (pageNum <= 1) {
-    return;
-  }
-  pageNum--;
-  pdfDiv.scrollTop = pdfDiv.scrollHeight;
+  pdfDiv.scrollTop = pdfDiv.scrollTop - pdfDiv.clientHeight;
+  return;
   queueRenderPage(pageNum);
 }
 
@@ -202,7 +227,7 @@ function onPrevPage() {
  */
 function onNextPage() {
   if (pdfDiv.scrollTop + pdfDiv.clientHeight < pdfDiv.scrollHeight) {
-    pdfDiv.scrollTop = pdfDiv.scrollHeight;
+    pdfDiv.scrollTop = pdfDiv.scrollTop + pdfDiv.clientHeight;
     return;
   }
   if (pageNum >= pdfDoc.numPages) {
@@ -220,11 +245,13 @@ function onRecording() {
   if (recording) {
     camera.stop();
     recording = false;
-    recordingElement.innerHTML = "Paused";
+    document.getElementById('recording-status').textContent = "Recording paused";
+    drawX();
   } else {
     camera.start();
     recording = true;
     recordingElement.innerHTML = "Recording";
+    document.getElementById('recording-status').textContent = "Detecting face ...";
   }
 }
 
@@ -242,12 +269,28 @@ function updatePdfDoc(newPdfDoc) {
 
 pdfjsLib.getDocument(kDefaultPdf).promise.then(updatePdfDoc);
 
+function drawX() {
+  videoCtx.save()
+  videoCtx.rect(0, 0, videoCanvas.width, videoCanvas.height);
+  videoCtx.stroke();
+  videoCtx.beginPath();
+  videoCtx.moveTo(videoCanvas.width, 0);
+  videoCtx.lineTo(0, videoCanvas.height);
+  videoCtx.stroke();
+  videoCtx.restore();
+}
+
 function onResults(results) {
+  videoCtx.save();
+  videoCtx.clearRect(0, 0, videoCanvas.width, videoCanvas.height);
+  videoCtx.rect(0, 0, videoCanvas.width, videoCanvas.height);
+  videoCtx.stroke();
   if (recording) {
-    videoCtx.save();
-    videoCtx.clearRect(0, 0, videoCanvas.width, videoCanvas.height);
     if (results.multiFaceLandmarks) {
+      document.getElementById('recording-status').textContent = "Detected!";
       for (const landmarks of results.multiFaceLandmarks) {
+        drawConnectors(videoCtx, landmarks, FACEMESH_TESSELATION,
+                     {color: '#C0C0C070', lineWidth: 1});
         drawConnectors(videoCtx, landmarks, FACEMESH_RIGHT_EYE, {color: '#FF3030'});
         drawConnectors(videoCtx, landmarks, FACEMESH_RIGHT_IRIS, {color: '#FF3030'});
         drawConnectors(videoCtx, landmarks, FACEMESH_LEFT_EYE, {color: '#30FF30'});
@@ -271,11 +314,12 @@ function onResults(results) {
         }
       }
     } else {
+      document.getElementById('recording-status').textContent = "Detecting face ...";
       videoCtx.drawImage(
         results.image, 0, 0, videoCanvas.width, videoCanvas.height);
     }
-    videoCtx.restore();
   }
+  videoCtx.restore();
 }
 
 const faceMesh = new FaceMesh({locateFile: (file) => {
