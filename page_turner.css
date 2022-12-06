@@ -108,3 +108,26 @@ b:hover {
 .collapsible:hover {
   background-color: #ddd;
 }
+
+input[type="file"] {
+  position: absolute;
+  z-index: -1;
+  visibility: hidden;
+}
+
+.upload-label {
+  display: inline-block;
+  padding: 8px 16px; 
+  cursor: pointer;
+  border-radius: 4px;
+  background-color: #ccc;
+  color: black;
+}
+
+.upload-label:hover {
+  background-color: #ddd;
+}
+
+.upload-wrap {
+  position: relative;
+}
