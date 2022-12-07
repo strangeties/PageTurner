@@ -3,9 +3,15 @@ canvas#pdf-canvas {
   direction: ltr;
 }
 
+div#camera-container {
+  margin: 0px auto;
+  text-align: center;
+}
+
 canvas#video-canvas {
   border: 1px solid black;
   direction: ltr;
+  transition: .4s;
 }
 
 /* The switch - the box around the slider */
@@ -67,28 +73,21 @@ input:checked + .slider:before {
   border-radius: 50%;
 }
 
-a {
+/* Buttons */
+
+a, c {
   text-decoration: none;
   display: inline-block;
   padding: 8px 16px;
   background-color: #ccc;
   color: black;
+}
+
+a {
   width: 50px;
 }
 
-a:hover {
-  background-color: #ddd;
-}
-
-b {
-  text-decoration: none;
-  display: inline-block;
-  padding: 8px 16px;
-  background-color: #ccc;
-  color: black;
-}
-
-b:hover {
+a:hover, c:hover {
   background-color: #ddd;
 }
 
@@ -96,7 +95,7 @@ b:hover {
   border-radius: 10%;
 }
 
-/* Style the button that is used to open and close the collapsible content */
+/* Button used to open and close the collapsible content */
 .collapsible {
   background-color: #ccc;
   color: black;
@@ -115,6 +114,7 @@ input[type="file"] {
   visibility: hidden;
 }
 
+/* Upload button */
 .upload-label {
   display: inline-block;
   padding: 8px 16px; 
@@ -130,4 +130,9 @@ input[type="file"] {
 
 .upload-wrap {
   position: relative;
+}
+
+/* Instructions section */
+div#instructions {
+  font-size: 12px;
 }

@@ -39,14 +39,30 @@
     <tr>
       <td><label class="switch"><input type="checkbox" checked id="recording"><span class="slider round"></span></label></td>
       <td><span id="recording-status">Detecting face ...</span></td>
-      <td align="right"><b href="#" id="collapse" class="collapsible round">&#x25B2;</a></td>
+      <td align="right"><c href="#" id="collapse" class="collapsible round">&#x25B2;</a></td>
     </tr>
     <tr><td colspan="3">
       <div id="camera-container">
-        <video class="video" hidden></video>
+        <video class="video"></video>
         <canvas class="video-canvas" width="320px" height="180px"></canvas>
       </div>
     </td></tr>
+    <tr>
+      <td colspan="3">
+        <div id="instructions">
+          <b>Instructions</b>
+          <br>
+          <br>With recording enabled ...
+          <br>... move your face about until it has been detected.
+          <br>... tilt your head right to go to the next section (or click "Next").
+          <br>... tilt your head left to go to a previous section (or click "Previous").
+          <br>
+          <br>Turn the camera on/off by selecting the toggle switch.
+          <br>Hide/show the video by selecting the triangular "collapsible" button.
+          <br>Select "Upload PDF" to change the PDF file.
+          <br>Select "Smaller" or "Larger" to adjust the PDF display size.
+      </td>
+    </tr>
   </table>
 </td>
 <td>

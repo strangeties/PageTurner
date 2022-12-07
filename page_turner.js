@@ -18,11 +18,10 @@ var pdfDoc = null,
     pageNum = kPageOne,
     pageRendering = false,
     pageNumPending = null,
-    scale = 1.5,
+    scale = 0.8,
     pdfCanvas = null,
     pdfCtx = null,
-    pdfDiv = null,
-    collapsed = false;
+    pdfDiv = null;
 
 /**
  *Camera variables
@@ -124,6 +123,7 @@ function initOnLoad() {
 
     video = document.getElementsByClassName('video')[0];
     videoCanvas = document.getElementsByClassName('video-canvas')[0];
+    videoCanvas.style.display = "none";
     videoCtx = videoCanvas.getContext('2d');
     videoCtx.translate(videoCanvas.width, 0);
     videoCtx.scale(-1, 1);
@@ -134,8 +134,8 @@ function initOnLoad() {
       onFrame: async () => {
         await faceMesh.send({image: video});
       },
-      width: 1280,
-      height: 720
+      width: 320,
+      height: 180
     });
     camera.start();
 }
@@ -246,12 +246,16 @@ function onRecording() {
     camera.stop();
     recording = false;
     document.getElementById('recording-status').textContent = "Recording paused";
+    video.style.display = "none";
+    videoCanvas.style.display = "block";
     drawX();
   } else {
     camera.start();
     recording = true;
     recordingElement.innerHTML = "Recording";
     document.getElementById('recording-status').textContent = "Detecting face ...";
+    video.style.display = "block";
+    videoCanvas.style.display = "none";
   }
 }
 
@@ -287,6 +291,8 @@ function onResults(results) {
   videoCtx.stroke();
   if (recording) {
     if (results.multiFaceLandmarks) {
+      video.style.display = "none";
+      videoCanvas.style.display = "block"; 
       document.getElementById('recording-status').textContent = "Detected!";
       for (const landmarks of results.multiFaceLandmarks) {
         drawConnectors(videoCtx, landmarks, FACEMESH_TESSELATION,
@@ -314,9 +320,9 @@ function onResults(results) {
         }
       }
     } else {
+      video.style.display = "block";
+      videoCanvas.style.display = "none";
       document.getElementById('recording-status').textContent = "Detecting face ...";
-      videoCtx.drawImage(
-        results.image, 0, 0, videoCanvas.width, videoCanvas.height);
     }
   }
   videoCtx.restore();
