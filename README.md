@@ -15,8 +15,9 @@ Usage Instructions
 
 ---
 
-bring up demo (at http://localhost:8000):
-python -m SimpleHTTPServer
+bring up demo (at https://localhost:8000)
+- python -m SimpleHTTPServer
+- python3 -m http.server 8000
 
 ---
 
